@@ -27,19 +27,32 @@ export const signInWithGoogle = async () => {
         totalScore: 0,
         highScore: 0,
         gameHistory: [],
+        unlockedAchievements: [],
         categoryStats: {},
         progress: {
           beginner: 0,
           medium: 0,
           advance: 0
         },
-        lastPlayed: new Date().toISOString()
+        lastPlayed: new Date().toISOString(),
+        settings: {
+          defaultTimerDuration: 30
+        }
       };
       await setDoc(userDocRef, newUser);
       return newUser;
     }
     
-    return userDoc.data() as UserProfile;
+    const existingData = userDoc.data() as UserProfile;
+    // Migration: ensure new fields exist
+    if (!existingData.unlockedAchievements) existingData.unlockedAchievements = [];
+    if (!existingData.categoryStats) existingData.categoryStats = {};
+    if (!existingData.gameHistory) existingData.gameHistory = [];
+    if (!existingData.settings) {
+      existingData.settings = { defaultTimerDuration: 30 };
+    }
+    
+    return existingData;
   } catch (error) {
     console.error("Error signing in with Google:", error);
     throw error;

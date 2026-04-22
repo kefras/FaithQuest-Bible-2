@@ -316,5 +316,251 @@ export const QUESTIONS: Question[] = [
     correctAnswer: 'The Word of God',
     hint: 'Luke 8:11 explains this directly.',
     category: 'Parables'
+  },
+  // NEW QUESTIONS - BEGINNER - OLD TESTAMENT
+  {
+    id: 'b-ot-7',
+    testament: 'Old',
+    level: 'Beginner',
+    text: 'What was the source of Samson\'s great strength?',
+    options: ['His eyes', 'His hair', 'His shoes', 'His belt'],
+    correctAnswer: 'His hair',
+    hint: 'It was never supposed to be cut.',
+    category: 'Judges'
+  },
+  {
+    id: 'b-ot-8',
+    testament: 'Old',
+    level: 'Beginner',
+    text: 'Out of what did God create Eve?',
+    options: ['Dust', 'A flower', 'Adam\'s rib', 'A cloud'],
+    correctAnswer: 'Adam\'s rib',
+    hint: 'She was created from the first man.',
+    category: 'Genesis'
+  },
+  {
+    id: 'b-ot-9',
+    testament: 'Old',
+    level: 'Beginner',
+    text: 'What did Joseph\'s father give him that made his brothers jealous?',
+    options: ['A gold ring', 'A robe of many colors', 'A fast horse', 'A silver sword'],
+    correctAnswer: 'A robe of many colors',
+    hint: 'It was a special, beautiful garment.',
+    category: 'Genesis'
+  },
+  {
+    id: 'b-ot-10',
+    testament: 'Old',
+    level: 'Beginner',
+    text: 'On what were the Ten Commandments written?',
+    options: ['Papyrus', 'Leather', 'Stone tablets', 'Gold plates'],
+    correctAnswer: 'Stone tablets',
+    hint: 'Moses brought them down from Mount Sinai.',
+    category: 'Exodus'
+  },
+  // NEW QUESTIONS - BEGINNER - NEW TESTAMENT
+  {
+    id: 'b-nt-6',
+    testament: 'New',
+    level: 'Beginner',
+    text: 'Who was the cousin of Jesus who baptized him?',
+    options: ['Peter', 'James', 'John the Baptist', 'Matthew'],
+    correctAnswer: 'John the Baptist',
+    hint: 'He preached in the wilderness wearing camel\'s hair.',
+    category: 'Matthew'
+  },
+  {
+    id: 'b-nt-7',
+    testament: 'New',
+    level: 'Beginner',
+    text: 'What was the short man\'s name who climbed a sycamore tree to see Jesus?',
+    options: ['Zacchaeus', 'Lazarus', 'Bartimaeus', 'Cornelius'],
+    correctAnswer: 'Zacchaeus',
+    hint: 'He was a wealthy tax collector in Jericho.',
+    category: 'Luke'
+  },
+  {
+    id: 'b-nt-8',
+    testament: 'New',
+    level: 'Beginner',
+    text: 'Which disciple walked on water toward Jesus but then began to sink?',
+    options: ['John', 'Peter', 'Andrew', 'Thomas'],
+    correctAnswer: 'Peter',
+    hint: 'He was often the most outspoken of the twelve.',
+    category: 'Matthew'
+  },
+  {
+    id: 'b-nt-9',
+    testament: 'New',
+    level: 'Beginner',
+    text: 'In which town was Jesus raised?',
+    options: ['Bethlehem', 'Nazareth', 'Jericho', 'Capernaum'],
+    correctAnswer: 'Nazareth',
+    hint: 'People asked, "Can anything good come from...?"',
+    category: 'Matthew'
+  },
+  // NEW QUESTIONS - MEDIUM - OLD TESTAMENT
+  {
+    id: 'm-ot-6',
+    testament: 'Old',
+    level: 'Medium',
+    text: 'Which woman became Queen of Persia and saved her people from destruction?',
+    options: ['Ruth', 'Esther', 'Rahab', 'Hagar'],
+    correctAnswer: 'Esther',
+    hint: 'She was coached by her cousin Mordecai.',
+    category: 'Esther'
+  },
+  {
+    id: 'm-ot-7',
+    testament: 'Old',
+    level: 'Medium',
+    text: 'How many people were on Noah\'s Ark?',
+    options: ['2', '4', '8', '12'],
+    correctAnswer: '8',
+    hint: 'Noah and his wife, plus their three sons and their wives.',
+    category: 'Genesis'
+  },
+  {
+    id: 'm-ot-8',
+    testament: 'Old',
+    level: 'Medium',
+    text: 'Who was the prophet that succeeded Elijah after he was taken to heaven?',
+    options: ['Elisha', 'Isaiah', 'Samuel', 'Malachi'],
+    correctAnswer: 'Elisha',
+    hint: 'He asked for a double portion of his predecessor\'s spirit.',
+    category: '2 Kings'
+  },
+  {
+    id: 'm-ot-9',
+    testament: 'Old',
+    level: 'Medium',
+    text: 'What was the name of the prostitute who hid the Israelite spies in Jericho?',
+    options: ['Delilah', 'Rahab', 'Jezebel', 'Leah'],
+    correctAnswer: 'Rahab',
+    hint: 'She lowered them out of her window with a scarlet cord.',
+    category: 'Joshua'
+  },
+  // NEW QUESTIONS - MEDIUM - NEW TESTAMENT
+  {
+    id: 'm-nt-6',
+    testament: 'New',
+    level: 'Medium',
+    text: 'Who wrote the book of Acts?',
+    options: ['Paul', 'Peter', 'Luke', 'John'],
+    correctAnswer: 'Luke',
+    hint: 'He was a physician and also wrote a Gospel.',
+    category: 'Acts'
+  },
+  {
+    id: 'm-nt-7',
+    testament: 'New',
+    level: 'Medium',
+    text: 'What did the Prodigal Son do for work when he ran out of money?',
+    options: ['Cook', 'Pig feeder', 'Carpenter', 'Shepherd'],
+    correctAnswer: 'Pig feeder',
+    hint: 'He longed to eat what the animals were eating.',
+    category: 'Luke'
+  },
+  {
+    id: 'm-nt-8',
+    testament: 'New',
+    level: 'Medium',
+    text: 'How many Fruit of the Spirit are listed in Galatians 5?',
+    options: ['7', '12', '9', '3'],
+    correctAnswer: '9',
+    hint: 'They include love, joy, peace, and patience.',
+    category: 'Galatians'
+  },
+  {
+    id: 'm-nt-9',
+    testament: 'New',
+    level: 'Medium',
+    text: 'Which island was Paul shipwrecked on while traveling to Rome?',
+    options: ['Crete', 'Malta', 'Cyprus', 'Sicily'],
+    correctAnswer: 'Malta',
+    hint: 'The inhabitants showed unusual kindness to them.',
+    category: 'Acts'
+  },
+  // NEW QUESTIONS - ADVANCE - OLD TESTAMENT
+  {
+    id: 'a-ot-6',
+    testament: 'Old',
+    level: 'Advance',
+    text: 'Who was the king of Babylon when Daniel interpreted the dream of the huge statue?',
+    options: ['Darius', 'Cyrus', 'Nebuchadnezzar', 'Belshazzar'],
+    correctAnswer: 'Nebuchadnezzar',
+    hint: 'He also built the Hanging Gardens.',
+    category: 'Daniel'
+  },
+  {
+    id: 'a-ot-7',
+    testament: 'Old',
+    level: 'Advance',
+    text: 'Who was the mother of Ishmael?',
+    options: ['Sarah', 'Hagar', 'Rebekah', 'Rachel'],
+    correctAnswer: 'Hagar',
+    hint: 'She was Sarah\'s Egyptian handmaid.',
+    category: 'Genesis'
+  },
+  {
+    id: 'a-ot-8',
+    testament: 'Old',
+    level: 'Advance',
+    text: 'Which prophet saw a valley full of dry bones that came to life?',
+    options: ['Isaiah', 'Jeremiah', 'Ezekiel', 'Joel'],
+    correctAnswer: 'Ezekiel',
+    hint: 'He was a priest who prophesied during the Babylonian exile.',
+    category: 'Ezekiel'
+  },
+  {
+    id: 'a-ot-9',
+    testament: 'Old',
+    level: 'Advance',
+    text: 'Who was the King of Salem and Priest of God Most High who blessed Abraham?',
+    options: ['Abimelech', 'Melchizedek', 'Lot', 'Enoch'],
+    correctAnswer: 'Melchizedek',
+    hint: 'His name means "King of Righteousness".',
+    category: 'Genesis'
+  },
+  // NEW QUESTIONS - ADVANCE - NEW TESTAMENT
+  {
+    id: 'a-nt-6',
+    testament: 'New',
+    level: 'Advance',
+    text: 'To which church did Paul write about the "Armor of God"?',
+    options: ['Rome', 'Corinth', 'Ephesus', 'Philippi'],
+    correctAnswer: 'Ephesus',
+    hint: 'Look in the 6th chapter of this epistle.',
+    category: 'Ephesians'
+  },
+  {
+    id: 'a-nt-7',
+    testament: 'New',
+    level: 'Advance',
+    text: 'Who was the high priest who presided over the trial of Jesus before the Sanhedrin?',
+    options: ['Annas', 'Caiaphas', 'Gamaliel', 'Nicodemus'],
+    correctAnswer: 'Caiaphas',
+    hint: 'He said it was better for one man to die for the people.',
+    category: 'Gospels'
+  },
+  {
+    id: 'a-nt-8',
+    testament: 'New',
+    level: 'Advance',
+    text: 'How many churches are specifically addressed in the beginning of Revelation?',
+    options: ['3', '12', '7', '1'],
+    correctAnswer: '7',
+    hint: 'They were all located in the province of Asia.',
+    category: 'Revelation'
+  },
+  {
+    id: 'a-nt-9',
+    testament: 'New',
+    level: 'Advance',
+    text: 'Which New Testament book focuses heavily on the contrast between faith and works?',
+    options: ['Galatians', 'James', 'Romans', 'Hebrews'],
+    correctAnswer: 'James',
+    hint: 'It famously says, "Faith without works is dead."',
+    category: 'James'
   }
 ];

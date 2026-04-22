@@ -22,12 +22,18 @@ import {
   PieChart,
   Edit3,
   Camera,
-  Target
+  Target,
+  Award,
+  Scroll,
+  Sun,
+  Leaf,
+  Crown
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
 import { auth, signInWithGoogle, db, getLeaderboard, updateUserProfile, recordGameHistory } from './lib/firebase';
 import { QUESTIONS } from './data/questions';
+import { ACHIEVEMENTS } from './constants/achievements';
 import { GameState, Testament, Level, Question, UserProfile, GameMode, GameHistoryEntry } from './types';
 import { doc, onSnapshot } from 'firebase/firestore';
 
@@ -140,7 +146,7 @@ export default function App() {
       questions: filteredQuestions,
       currentQuestionIndex: 0,
       score: 0,
-      timer: 30,
+      timer: userProfile?.settings?.defaultTimerDuration || 30,
       isGameOver: false,
       isPlaying: true,
       hintsUsed: 0,
@@ -193,7 +199,7 @@ export default function App() {
       setGameState(prev => ({
         ...prev,
         currentQuestionIndex: prev.currentQuestionIndex + 1,
-        timer: 30
+        timer: userProfile?.settings?.defaultTimerDuration || 30
       }));
     } else if (gameState.gameMode === 'Practice') {
       // Loop back to start in Practice Mode
@@ -201,7 +207,7 @@ export default function App() {
         ...prev,
         currentQuestionIndex: 0,
         questions: [...prev.questions].sort(() => Math.random() - 0.5), // Reshuffle for variety
-        timer: 30
+        timer: userProfile?.settings?.defaultTimerDuration || 30
       }));
     } else {
       endGame();
@@ -248,11 +254,39 @@ export default function App() {
       
       await recordGameHistory(userProfile.userId, historyEntry);
 
+      // --- Achievement Checking ---
+      const currentlyUnlocked = userProfile.unlockedAchievements || [];
+      const newUnlocks: string[] = [];
+
+      ACHIEVEMENTS.forEach(ach => {
+        if (currentlyUnlocked.includes(ach.id)) return;
+
+        let isMet = false;
+        if (ach.id === 'first_quest') isMet = true;
+        if (ach.id === 'perfect_standard' && gameState.gameMode === 'Standard' && gameState.correctCount === 10) isMet = true;
+        if (ach.id === 'genesis_master') {
+          const genesisStat = newCategoryStats['Genesis'];
+          if (genesisStat && genesisStat.correct === genesisStat.total && genesisStat.total >= 5) isMet = true;
+        }
+        if (ach.id === 'daily_champion' && gameState.gameMode === 'Daily' && gameState.score >= 500) isMet = true;
+        if (ach.id === 'advanced_scholar' && gameState.selectedLevel === 'Advance' && gameState.correctCount >= 8) isMet = true;
+
+        if (isMet) newUnlocks.push(ach.id);
+      });
+
+      const updatedAchievements = [...currentlyUnlocked, ...newUnlocks];
+
+      if (newUnlocks.length > 0) {
+        // We could show a toast here, but for now we just record it.
+        console.log("Unlocked new achievements:", newUnlocks);
+      }
+
       await updateUserProfile(userProfile.userId, {
         totalScore: newTotalScore,
         highScore: newHighScore,
         progress: newProgress,
-        categoryStats: newCategoryStats
+        categoryStats: newCategoryStats,
+        unlockedAchievements: updatedAchievements
       });
     }
   };
@@ -807,6 +841,78 @@ export default function App() {
                             )}
                          </div>
                       </div>
+
+                      <div className="space-y-6">
+                         <div className="flex items-center gap-2">
+                            <Award className="w-4 h-4 text-geo-accent" />
+                            <h4 className="geo-label">Spiritual Achievements</h4>
+                         </div>
+                         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                            {ACHIEVEMENTS.map(ach => {
+                               const isUnlocked = userProfile?.unlockedAchievements?.includes(ach.id);
+                               const Icon = {
+                                 Scroll: Scroll,
+                                 Sun: Sun,
+                                 Leaf: Leaf,
+                                 Crown: Crown,
+                                 Book: BookOpen
+                               }[ach.icon] || Award;
+
+                               return (
+                                 <div 
+                                   key={ach.id} 
+                                   className={`p-4 rounded-2xl border flex flex-col items-center text-center space-y-3 transition-all ${
+                                     isUnlocked 
+                                       ? 'bg-white border-geo-border shadow-sm border-b-2 border-b-geo-primary' 
+                                       : 'bg-geo-bg border-geo-border/50 opacity-40 grayscale'
+                                   }`}
+                                 >
+                                    <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${isUnlocked ? 'bg-geo-primary text-white' : 'bg-slate-200 text-slate-400'}`}>
+                                       <Icon className="w-6 h-6" />
+                                    </div>
+                                    <div className="space-y-1">
+                                       <p className={`text-[10px] font-black uppercase tracking-tight ${isUnlocked ? 'text-geo-text' : 'text-slate-400'}`}>{ach.title}</p>
+                                       {isUnlocked && <p className="text-[8px] text-slate-400 font-medium leading-none">{ach.description}</p>}
+                                    </div>
+                                 </div>
+                               );
+                            })}
+                         </div>
+                      </div>
+
+                      <div className="space-y-6">
+                         <div className="flex items-center gap-2">
+                            <Settings className="w-4 h-4 text-geo-accent" />
+                            <h4 className="geo-label">Pilgrim Settings</h4>
+                         </div>
+                         <div className="bg-geo-bg p-6 rounded-2xl border border-geo-border space-y-4">
+                            <div className="flex items-center justify-between">
+                               <div>
+                                  <p className="text-xs font-bold text-geo-text">Quest Timer Duration</p>
+                                  <p className="text-[10px] text-slate-400">Total time allowed per scripture challenge.</p>
+                               </div>
+                               <div className="flex items-center gap-3">
+                                  <input 
+                                    type="range" 
+                                    min="15" 
+                                    max="60" 
+                                    step="5"
+                                    value={userProfile?.settings?.defaultTimerDuration || 30}
+                                    onChange={(e) => {
+                                      const newVal = parseInt(e.target.value);
+                                      updateUserProfile(user!.uid, { 
+                                        settings: { ...userProfile!.settings, defaultTimerDuration: newVal }
+                                      });
+                                    }}
+                                    className="h-1.5 w-32 bg-geo-border rounded-lg appearance-none cursor-pointer accent-geo-primary"
+                                  />
+                                  <span className="w-8 text-center font-serif font-black text-geo-primary">
+                                     {userProfile?.settings?.defaultTimerDuration || 30}s
+                                  </span>
+                               </div>
+                            </div>
+                         </div>
+                      </div>
                    </div>
                  ) : showHistory ? (
                    <div className="space-y-8">
@@ -886,27 +992,64 @@ export default function App() {
                  ) : (
                    <div className="space-y-8">
                       <div className="flex items-center justify-between">
-                         <h2 className="text-2xl font-serif font-black uppercase tracking-tight">Global Leaderboard</h2>
+                         <h2 className="text-2xl font-serif font-black uppercase tracking-tight">Echelons of Honor</h2>
                          <button onClick={() => setShowLeaderboard(false)} className="text-geo-accent hover:text-geo-text">
                             <ChevronRight className="w-6 h-6 rotate-180" />
                          </button>
                       </div>
-                      <div className="divide-y divide-geo-border">
-                         {leaderboardData.map((profile, i) => (
-                           <div key={profile.userId} className="flex items-center justify-between py-4 group">
-                              <div className="flex items-center gap-4 min-w-0">
-                                 <span className="text-lg font-black text-slate-300 w-6">{i + 1}</span>
-                                 <div className="w-10 h-10 rounded-lg bg-geo-hover border border-geo-border overflow-hidden">
-                                    <img src={profile.photoURL || `https://api.dicebear.com/7.x/avataaars/svg?seed=${profile.userId}`} alt="" />
+                      
+                      <div className="flex-1 overflow-y-auto scroll-smooth pr-2 custom-scrollbar space-y-3">
+                         {leaderboardData.map((profile, i) => {
+                            const isCurrentUser = profile.userId === user?.uid;
+                            const isTop3 = i < 3;
+                            
+                            return (
+                              <div 
+                                key={profile.userId} 
+                                className={`flex items-center justify-between p-4 rounded-2xl border transition-all ${
+                                  isCurrentUser 
+                                    ? 'bg-geo-primary/5 border-geo-primary shadow-lg shadow-geo-primary/5 scale-[1.02]' 
+                                    : 'bg-white border-geo-border hover:border-geo-accent/30'
+                                }`}
+                              >
+                                 <div className="flex items-center gap-4 min-w-0">
+                                    <div className="relative">
+                                       <span className={`text-sm font-black w-8 h-8 rounded-lg flex items-center justify-center ${
+                                         i === 0 ? 'bg-amber-400 text-white' :
+                                         i === 1 ? 'bg-slate-300 text-white' :
+                                         i === 2 ? 'bg-amber-600 text-white' :
+                                         'text-slate-300'
+                                       }`}>
+                                          {i + 1}
+                                       </span>
+                                       {isTop3 && (
+                                         <Medal className={`absolute -top-2 -left-2 w-4 h-4 shadow-sm ${
+                                           i === 0 ? 'text-amber-400' :
+                                           i === 1 ? 'text-slate-400' :
+                                           'text-amber-700'
+                                         }`} />
+                                       )}
+                                    </div>
+                                    <div className="w-12 h-12 rounded-xl bg-geo-hover border border-geo-border overflow-hidden relative shadow-inner">
+                                       <img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${profile.avatarSeed || profile.userId}`} alt="" />
+                                       {isCurrentUser && (
+                                         <div className="absolute inset-0 border-2 border-geo-primary rounded-xl" />
+                                       )}
+                                    </div>
+                                    <div className="min-w-0">
+                                       <p className={`font-bold truncate ${isCurrentUser ? 'text-geo-primary' : 'text-geo-text'}`}>
+                                          {profile.displayName} {isCurrentUser && <span className="text-[8px] uppercase tracking-tighter ml-1 opacity-60 text-geo-primary font-black animate-pulse">(You)</span>}
+                                       </p>
+                                       <p className="text-[10px] text-slate-400 font-medium uppercase tracking-tight">Rank {i + 1}</p>
+                                    </div>
                                  </div>
-                                 <span className="font-bold truncate">{profile.displayName}</span>
+                                 <div className="text-right">
+                                    <p className="text-2xl font-serif font-black text-geo-primary leading-none mb-1">{profile.highScore}</p>
+                                    <p className="geo-label text-[8px]">Highest Score</p>
+                                 </div>
                               </div>
-                              <div className="text-right">
-                                 <p className="font-serif font-black text-geo-primary">{profile.highScore}</p>
-                                 <p className="geo-label text-[8px]">Best Match</p>
-                              </div>
-                           </div>
-                         ))}
+                            );
+                         })}
                       </div>
                    </div>
                  )}

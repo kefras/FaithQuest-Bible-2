@@ -31,6 +31,7 @@ export interface UserProfile {
   totalScore: number;
   highScore: number;
   gameHistory: GameHistoryEntry[];
+  unlockedAchievements: string[];
   categoryStats: Record<string, { correct: number; total: number }>;
   progress: {
     beginner: number;
@@ -38,6 +39,9 @@ export interface UserProfile {
     advance: number;
   };
   lastPlayed: string;
+  settings: {
+    defaultTimerDuration: number;
+  };
 }
 
 export interface GameState {
