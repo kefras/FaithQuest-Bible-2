@@ -66,6 +66,8 @@ export default function App() {
   const [selectedOption, setSelectedOption] = useState<string | null>(null);
   const [isShowingFeedback, setIsShowingFeedback] = useState(false);
 
+  const [isFetchingLeaderboard, setIsFetchingLeaderboard] = useState(false);
+
   // Derived categories from questions
   const categories = Array.from(new Set(QUESTIONS.map(q => q.category).filter(Boolean)));
 
@@ -84,25 +86,45 @@ export default function App() {
   };
 
   useEffect(() => {
+    let unsubProfile: (() => void) | null = null;
+
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       setUser(firebaseUser);
+      
+      // Cleanup previous profile listener if it exists
+      if (unsubProfile) {
+        unsubProfile();
+        unsubProfile = null;
+      }
+
       if (firebaseUser) {
         // Listen to user profile changes
         const userDocRef = doc(db, 'users', firebaseUser.uid);
-        const unsubProfile = onSnapshot(userDocRef, (doc) => {
-          if (doc.exists()) {
-            setUserProfile(doc.data() as UserProfile);
+        unsubProfile = onSnapshot(userDocRef, 
+          (doc) => {
+            if (doc.exists()) {
+              setUserProfile(doc.data() as UserProfile);
+            }
+          },
+          (error) => {
+            console.error("Firestore Profile Sync Error:", {
+              error: error.message,
+              userId: firebaseUser?.uid,
+              path: `users/${firebaseUser?.uid}`
+            });
           }
-        });
+        );
         setLoading(false);
-        return () => unsubProfile();
       } else {
         setUserProfile(null);
         setLoading(false);
       }
     });
 
-    return () => unsubscribe();
+    return () => {
+      unsubscribe();
+      if (unsubProfile) unsubProfile();
+    };
   }, []);
 
   useEffect(() => {
@@ -117,6 +139,10 @@ export default function App() {
 
     return () => clearInterval(interval);
   }, [gameState.isPlaying, gameState.isGameOver, gameState.timer, isShowingFeedback, gameState.gameMode]);
+
+  useEffect(() => {
+    fetchLeaderboard();
+  }, []);
 
   const handleStartGame = () => {
     let filteredQuestions: Question[] = [];
@@ -292,8 +318,19 @@ export default function App() {
   };
 
   const fetchLeaderboard = async () => {
-    const data = await getLeaderboard();
-    setLeaderboardData(data);
+    setIsFetchingLeaderboard(true);
+    try {
+      const data = await getLeaderboard();
+      setLeaderboardData(data);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setIsFetchingLeaderboard(false);
+    }
+  };
+
+  const handleShowLeaderboard = () => {
+    fetchLeaderboard();
     setShowLeaderboard(true);
   };
 
@@ -308,38 +345,38 @@ export default function App() {
   return (
     <div className="flex flex-col h-screen overflow-hidden bg-geo-bg text-geo-text">
       {/* Header Section */}
-      <header className="h-20 border-b border-geo-border flex items-center justify-between px-10 bg-white shadow-sm z-10 shrink-0">
-        <div className="flex items-center space-x-3" id="app-logo">
-          <div className="w-10 h-10 bg-geo-primary rounded-lg flex items-center justify-center rotate-45 shadow-lg shadow-geo-primary/20 transition-transform hover:scale-105 active:scale-95 cursor-pointer">
-            <div className="-rotate-45 text-white font-black text-xl leading-none flex items-center justify-center">F</div>
+      <header className="h-16 md:h-20 border-b border-geo-border flex items-center justify-between px-4 md:px-10 bg-white shadow-sm z-20 shrink-0">
+        <div className="flex items-center space-x-2 md:space-x-3" id="app-logo">
+          <div className="w-8 h-8 md:w-10 md:h-10 bg-geo-primary rounded-lg flex items-center justify-center rotate-45 shadow-lg shadow-geo-primary/20 transition-transform hover:scale-105 active:scale-95 cursor-pointer">
+            <div className="-rotate-45 text-white font-black text-lg md:text-xl leading-none flex items-center justify-center">F</div>
           </div>
-          <h1 className="text-2xl font-bold tracking-tight text-geo-primary">FAITHQUEST <span className="font-light text-geo-accent">BIBLE</span></h1>
+          <h1 className="text-lg md:text-2xl font-bold tracking-tight text-geo-primary">FAITHQUEST <span className="hidden sm:inline font-light text-geo-accent">BIBLE</span></h1>
         </div>
         
-        <div className="flex items-center space-x-12">
+        <div className="flex items-center space-x-4 md:space-x-12">
           {!user ? (
             <button 
               onClick={signInWithGoogle}
-              className="geo-btn-primary flex items-center gap-2"
+              className="geo-btn-primary flex items-center gap-2 px-3 py-2 md:px-4 md:py-2 text-xs md:text-sm min-h-[44px]"
               id="login-button"
             >
               <LogIn className="w-4 h-4" />
-              Sign In
+              <span className="hidden xs:inline">Sign In</span>
             </button>
           ) : (
             <>
-              <div className="text-center">
+              <div className="hidden lg:block text-center border-l border-geo-border pl-6">
                 <p className="geo-label">Level</p>
-                <p className="text-lg font-bold">{gameState.isPlaying ? gameState.selectedLevel : (userProfile?.progress.advance ? 'Advanced' : userProfile?.progress.medium ? 'Intermediate' : 'Beginner')}</p>
+                <p className="text-sm font-bold truncate max-w-[100px]">{gameState.isPlaying ? gameState.selectedLevel : (userProfile?.progress.advance ? 'Advanced' : userProfile?.progress.medium ? 'Intermediate' : 'Beginner')}</p>
               </div>
               <div className="text-center">
                 <p className="geo-label">Score</p>
-                <p className="text-lg font-bold text-geo-primary">{gameState.isPlaying ? gameState.score : userProfile?.totalScore || 0}</p>
+                <p className="text-sm md:text-lg font-bold text-geo-primary">{gameState.isPlaying ? gameState.score : userProfile?.totalScore || 0}</p>
               </div>
-              <div className="text-center">
+              <div className="hidden md:flex flex-col items-center">
                 <p className="geo-label">Progress</p>
                 <div className="flex items-center space-x-2 mt-1">
-                   <div className="w-32 h-2 bg-geo-border rounded-full overflow-hidden">
+                   <div className="w-24 lg:w-32 h-1.5 bg-geo-border rounded-full overflow-hidden">
                      <motion.div 
                        className="h-full bg-geo-primary"
                        initial={{ width: 0 }}
@@ -350,22 +387,23 @@ export default function App() {
                        }}
                      />
                    </div>
-                   <span className="text-sm font-bold">
-                     {gameState.isPlaying ? `${gameState.currentQuestionIndex + 1}/${gameState.questions.length}` : '00/00'}
+                   <span className="text-xs font-bold">
+                     {gameState.isPlaying ? `${gameState.currentQuestionIndex + 1}/${gameState.questions.length}` : '--/--'}
                    </span>
                 </div>
               </div>
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2 md:gap-3">
                 <div 
-                  className="w-9 h-9 rounded-full overflow-hidden border border-geo-border bg-slate-100 cursor-pointer hover:ring-2 hover:ring-geo-primary transition-all"
+                  className="w-8 h-8 md:w-10 md:h-10 rounded-full overflow-hidden border border-geo-border bg-slate-100 cursor-pointer hover:ring-2 hover:ring-geo-primary transition-all flex-shrink-0"
                   onClick={() => setShowProfile(true)}
                 >
-                  <img src={userProfile?.photoURL || (userProfile?.avatarSeed ? `https://api.dicebear.com/7.x/avataaars/svg?seed=${userProfile.avatarSeed}` : `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.uid}`)} alt="Profile" />
+                  <img src={userProfile?.photoURL || (userProfile?.avatarSeed ? `https://api.dicebear.com/7.x/avataaars/svg?seed=${userProfile.avatarSeed}` : `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.uid}`)} alt="Profile" className="w-full h-full object-cover" />
                 </div>
                 <button 
                   onClick={() => auth.signOut()}
-                  className="p-2 text-slate-400 hover:text-red-500 transition-colors"
+                  className="p-2 text-slate-400 hover:text-red-500 transition-colors bg-slate-50 rounded-lg min-h-[44px] min-w-[44px] flex items-center justify-center"
                   id="logout-button"
+                  aria-label="Logout"
                 >
                   <LogOut className="w-4 h-4" />
                 </button>
@@ -375,9 +413,9 @@ export default function App() {
         </div>
       </header>
 
-      <main className="flex-1 flex overflow-hidden">
+      <main className="flex-1 flex flex-col md:flex-row overflow-hidden relative">
         {/* Sidebar: Selection & Leaderboard */}
-        <aside className="w-72 border-r border-geo-border bg-white overflow-y-auto shrink-0 flex flex-col">
+        <aside className={`w-full md:w-72 border-r border-geo-border bg-white overflow-y-auto shrink-0 flex flex-col h-auto md:h-full max-h-[50vh] md:max-h-none z-10 shadow-lg md:shadow-none transition-all duration-300 ${gameState.isPlaying ? 'hidden md:flex' : 'flex'}`}>
           {/* Game Configuration Section */}
           <div className="p-6 space-y-8 border-b border-geo-border">
             <div>
@@ -393,11 +431,11 @@ export default function App() {
                       key={m}
                       disabled={gameState.isPlaying}
                       onClick={() => setGameState(prev => ({ ...prev, gameMode: m }))}
-                      className={`py-2 rounded-lg text-[9px] font-black uppercase tracking-tight transition-all ${
+                      className={`py-3 md:py-2 rounded-lg text-xs md:text-[9px] font-black uppercase tracking-tight transition-all min-h-[44px] md:min-h-0 flex items-center justify-center ${
                         isActive 
-                          ? 'bg-white text-geo-primary shadow-sm' 
+                          ? 'bg-white text-geo-primary shadow-sm ring-1 ring-geo-primary/10' 
                           : 'text-slate-400 hover:text-slate-600'
-                      } ${gameState.isPlaying ? 'cursor-not-allowed' : ''}`}
+                      } ${gameState.isPlaying ? 'cursor-not-allowed' : 'active:scale-95'}`}
                     >
                       {m}
                     </button>
@@ -420,7 +458,7 @@ export default function App() {
                         key={t}
                         disabled={gameState.isPlaying}
                         onClick={() => setGameState(prev => ({ ...prev, selectedTestament: t }))}
-                        className={`relative flex items-center justify-between px-4 py-3 rounded-lg text-sm font-semibold transition-all group ${
+                        className={`relative flex items-center justify-between px-4 py-3 rounded-lg text-sm font-semibold transition-all group min-h-[44px] ${
                           isActive 
                             ? 'bg-geo-primary text-white shadow-md shadow-geo-primary/20 scale-[1.02]' 
                             : 'bg-geo-bg hover:bg-geo-hover text-geo-text border border-geo-border/50'
@@ -466,11 +504,11 @@ export default function App() {
                       key={l}
                       disabled={gameState.isPlaying}
                       onClick={() => setGameState(prev => ({ ...prev, selectedLevel: l }))}
-                      className={`flex-1 py-2 rounded-lg text-[10px] font-black uppercase tracking-tight transition-all ${
+                      className={`flex-1 py-3 md:py-2 rounded-lg text-xs md:text-[10px] font-black uppercase tracking-tight transition-all min-h-[44px] md:min-h-0 ${
                         isActive 
-                          ? 'bg-white text-geo-primary shadow-sm' 
+                          ? 'bg-white text-geo-primary shadow-sm ring-1 ring-geo-primary/10' 
                           : 'text-slate-400 hover:text-slate-600'
-                      } ${gameState.isPlaying ? 'cursor-not-allowed' : ''}`}
+                      } ${gameState.isPlaying ? 'cursor-not-allowed' : 'active:scale-95'}`}
                     >
                       {l}
                     </button>
@@ -507,14 +545,19 @@ export default function App() {
                 <h3 className="geo-label leading-none">Global Top 5</h3>
               </div>
               <button 
-                onClick={fetchLeaderboard}
+                onClick={handleShowLeaderboard}
                 className="text-[10px] font-bold text-geo-primary hover:underline uppercase tracking-widest"
               >
                 View
               </button>
             </div>
 
-            {leaderboardData.length > 0 ? (
+            {isFetchingLeaderboard ? (
+                 <div className="py-8 text-center bg-geo-bg rounded-2xl border border-dashed border-geo-border/50">
+                   <RefreshCw className="w-5 h-5 text-geo-primary mx-auto mb-2 animate-spin" />
+                   <p className="text-[10px] text-geo-primary font-bold uppercase tracking-widest animate-pulse">Searching Faithful...</p>
+                 </div>
+            ) : leaderboardData.length > 0 ? (
               <div className="space-y-3">
                 {leaderboardData.slice(0, 5).map((profile, idx) => {
                   const isGold = idx === 0;
@@ -561,7 +604,7 @@ export default function App() {
             ) : (
                 <div className="py-8 text-center bg-geo-bg rounded-2xl border border-dashed border-geo-border/50">
                   <RefreshCw className="w-5 h-5 text-geo-border mx-auto mb-2 opacity-50" />
-                  <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Searching Faithful...</p>
+                  <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">No Disciples found</p>
                 </div>
             )}
           </div>
@@ -579,7 +622,7 @@ export default function App() {
         </aside>
 
         {/* Main Quiz Area */}
-        <section className="flex-1 p-12 flex flex-col items-center overflow-y-auto bg-geo-bg relative">
+        <section className="flex-1 p-4 sm:p-6 md:p-12 flex flex-col items-center overflow-y-auto bg-geo-bg relative custom-scrollbar">
           <AnimatePresence mode="wait">
             {!gameState.isPlaying && !gameState.isGameOver && !showLeaderboard && !showHistory && !showProfile && (
               <motion.div 
@@ -587,14 +630,14 @@ export default function App() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.95 }}
-                className="max-w-2xl w-full flex flex-col items-center text-center space-y-12 py-10"
+                className="max-w-2xl w-full flex flex-col items-center text-center space-y-6 md:space-y-12 py-4 md:py-10 h-full justify-center"
               >
-                <div className="space-y-6">
-                  <h2 className="text-5xl font-serif font-black text-geo-text leading-tight uppercase tracking-tight">
+                <div className="space-y-4 md:space-y-6">
+                  <h2 className="text-3xl sm:text-4xl md:text-5xl font-serif font-black text-geo-text leading-tight uppercase tracking-tight">
                     The Ultimate <br/> 
-                    <span className="text-geo-primary italic underline decoration-geo-border underline-offset-[12px]">Scripture Quest</span>
+                    <span className="text-geo-primary italic underline decoration-geo-border underline-offset-[8px] md:underline-offset-[12px]">Scripture Quest</span>
                   </h2>
-                  <p className="text-lg text-slate-500 leading-relaxed max-w-lg mx-auto">
+                  <p className="text-sm md:text-lg text-slate-500 leading-relaxed max-w-lg mx-auto">
                     A geometrically balanced experience for the faithful. Test your knowledge, earn your place among disciples.
                   </p>
                 </div>
@@ -660,29 +703,29 @@ export default function App() {
                 </div>
 
                 {/* Question Card */}
-                <div className="w-full geo-card p-10 mb-10 overflow-hidden relative">
+                <div className="w-full geo-card p-6 md:p-10 mb-6 md:mb-10 overflow-hidden relative shadow-xl">
                   <div className="absolute top-0 right-0 w-32 h-32 bg-geo-primary/5 rounded-full -mr-16 -mt-16" />
-                  <h2 className="text-3xl font-serif text-center leading-relaxed mb-12 italic text-geo-text px-4">
+                  <h2 className="text-xl sm:text-2xl md:text-3xl font-serif text-center leading-relaxed mb-8 md:mb-12 italic text-geo-text px-2 md:px-4">
                     "{gameState.questions[gameState.currentQuestionIndex].text}"
                   </h2>
 
-                  <div className="grid grid-cols-2 gap-6 relative z-10">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6 relative z-10">
                     {gameState.questions[gameState.currentQuestionIndex].options.map((option, idx) => {
                       const isCorrect = option === gameState.questions[gameState.currentQuestionIndex].correctAnswer;
                       const isSelected = option === selectedOption;
                       
-                      let buttonClass = "p-6 border-2 border-geo-border rounded-lg text-lg font-medium hover:border-geo-primary hover:bg-[#F0F4F8] transition-all text-left flex items-center space-x-4 group";
+                      let buttonClass = "p-4 md:p-6 border-2 border-geo-border rounded-lg text-base md:text-lg font-medium hover:border-geo-primary hover:bg-[#F0F4F8] transition-all text-left flex items-center space-x-3 md:space-x-4 group min-h-[56px]";
                       let spanClass = "w-8 h-8 shrink-0 bg-geo-hover group-hover:bg-geo-primary group-hover:text-white rounded flex items-center justify-center text-xs font-black transition-colors";
 
                       if (isShowingFeedback) {
                         if (isCorrect) {
-                          buttonClass = "p-6 border-2 border-green-500 bg-green-50 rounded-lg text-lg font-medium text-left flex items-center space-x-4 group";
+                          buttonClass = "p-4 md:p-6 border-2 border-green-500 bg-green-50 rounded-lg text-base md:text-lg font-medium text-left flex items-center space-x-3 md:space-x-4 group min-h-[56px]";
                           spanClass = "w-8 h-8 shrink-0 bg-green-500 text-white rounded flex items-center justify-center text-xs font-black";
                         } else if (isSelected) {
-                          buttonClass = "p-6 border-2 border-red-500 bg-red-50 rounded-lg text-lg font-medium text-left flex items-center space-x-4 group";
+                          buttonClass = "p-4 md:p-6 border-2 border-red-500 bg-red-50 rounded-lg text-base md:text-lg font-medium text-left flex items-center space-x-3 md:space-x-4 group min-h-[56px]";
                           spanClass = "w-8 h-8 shrink-0 bg-red-500 text-white rounded flex items-center justify-center text-xs font-black";
                         } else {
-                          buttonClass = "p-6 border-2 border-geo-border rounded-lg text-lg font-medium opacity-40 text-left flex items-center space-x-4 group cursor-default";
+                          buttonClass = "p-4 md:p-6 border-2 border-geo-border rounded-lg text-base md:text-lg font-medium opacity-40 text-left flex items-center space-x-3 md:space-x-4 group cursor-default min-h-[56px]";
                         }
                       }
 
@@ -1060,25 +1103,25 @@ export default function App() {
       </main>
 
       {/* Footer status bar */}
-      <footer className="h-12 bg-geo-text text-white flex items-center justify-between px-10 text-[10px] font-black tracking-[0.3em] uppercase shrink-0">
-        <div className="flex space-x-12">
-          <span className="flex items-center gap-2">
+      <footer className="h-10 md:h-12 bg-geo-text text-white flex items-center justify-between px-4 md:px-10 text-[8px] md:text-[10px] font-black tracking-[0.2em] md:tracking-[0.3em] uppercase shrink-0 z-20">
+        <div className="flex space-x-4 md:space-x-12 overflow-x-auto no-scrollbar scroll-smooth">
+          <span className="flex items-center gap-1 md:gap-2 whitespace-nowrap">
             <span className="text-geo-accent">ID:</span> FQB-{user?.uid.slice(0, 4) || 'GUEST'}
           </span>
-          <span className="flex items-center gap-2">
+          <span className="flex items-center gap-1 md:gap-2 whitespace-nowrap underline decoration-geo-accent underline-offset-4">
             <span className="text-geo-accent">Difficulty:</span> {gameState.selectedLevel}
           </span>
-          <span className="hidden md:inline flex items-center gap-2">
-            <span className="text-geo-accent">Region:</span> EUROPE-WEST2
+          <span className="hidden sm:flex items-center gap-1 md:gap-2 whitespace-nowrap">
+            <span className="text-geo-accent">Region:</span> EU-W2
           </span>
         </div>
-        <div className="flex items-center space-x-2">
+        <div className="flex items-center space-x-2 shrink-0 ml-4">
           <motion.span 
-            className="w-2 h-2 bg-green-400 rounded-full"
+            className="w-1.5 h-1.5 md:w-2 md:h-2 bg-green-400 rounded-full"
             animate={{ opacity: [1, 0.4, 1] }}
             transition={{ repeat: Infinity, duration: 2 }}
           />
-          <span className="font-medium">Active Connection Pool</span>
+          <span className="font-medium hidden xs:inline">Live Pool</span>
         </div>
       </footer>
     </div>
