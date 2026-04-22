@@ -1,0 +1,32 @@
+{
+  "entities": {
+    "User": {
+      "title": "User Profile",
+      "description": "User progress and leaderboard data",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "displayName": { "type": "string" },
+        "photoURL": { "type": "string" },
+        "totalScore": { "type": "number" },
+        "highScore": { "type": "number" },
+        "progress": { 
+          "type": "object",
+          "properties": {
+            "beginner": { "type": "number" },
+            "medium": { "type": "number" },
+            "advance": { "type": "number" }
+          }
+        },
+        "lastPlayed": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "displayName", "totalScore"]
+    }
+  },
+  "firestore": {
+    "users/{userId}": {
+      "schema": "User",
+      "description": "Collection of user profiles and their game statistics"
+    }
+  }
+}

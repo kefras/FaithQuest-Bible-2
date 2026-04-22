@@ -1,0 +1,6 @@
+{
+  "name": "FaithQuest Bible",
+  "description": "An engaging Bible quiz app covering Old and New Testaments with hints, timers, and a global leaderboard.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["Firebase Authentication", "Firestore Database", "Responsive Design", "Motion Animations"]
+}

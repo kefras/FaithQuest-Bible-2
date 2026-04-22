@@ -1,0 +1,28 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Default deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    match /users/{userId} {
+      // Allow reading user profiles for the leaderboard
+      allow read: if isSignedIn();
+      
+      // Allow users to create/update their own profile
+      allow create, update: if isOwner(userId) && 
+        request.resource.data.userId == request.auth.uid &&
+        request.resource.data.displayName is string &&
+        request.resource.data.totalScore is number;
+    }
+  }
+}
