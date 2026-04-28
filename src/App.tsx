@@ -154,10 +154,11 @@ export default function App() {
     fetchDailyManna();
   }, []);
 
-  const handleStartGame = () => {
+  const handleStartGame = (overrideMode?: GameMode) => {
+    const mode = overrideMode ?? gameState.gameMode;
     let filteredQuestions: Question[] = [];
 
-    if (gameState.gameMode === 'Daily') {
+    if (mode === 'Daily') {
       filteredQuestions = getDailyQuestions();
     } else {
       filteredQuestions = QUESTIONS.filter(q => {
@@ -173,12 +174,13 @@ export default function App() {
       return;
     }
 
-    if (gameState.gameMode !== 'Daily') {
+    if (mode !== 'Daily') {
       filteredQuestions = filteredQuestions.sort(() => Math.random() - 0.5);
     }
 
     setGameState(prev => ({
       ...prev,
+      gameMode: mode,
       questions: filteredQuestions,
       currentQuestionIndex: 0,
       score: 0,
@@ -806,7 +808,7 @@ export default function App() {
                         <button
                           onClick={() => {
                             setShowManna(false);
-                            setGameState(prev => ({ ...prev, gameMode: 'Daily' }));
+                            handleStartGame('Daily');
                           }}
                           className="geo-btn-primary flex items-center gap-2 text-xs py-2"
                         >
