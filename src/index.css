@@ -1,16 +1,16 @@
-@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,400..900;1,400..900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Playfair+Display:ital,wght@0,400..900;1,400..900&display=swap');
 @import "tailwindcss";
 
 @theme {
-  --font-sans: "Outfit", ui-sans-serif, system-ui, sans-serif;
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
   --font-serif: "Playfair Display", ui-serif, Georgia, serif;
   
-  --color-geo-bg: #FDFBF7;
-  --color-geo-text: #2D3142;
-  --color-geo-primary: #4A6FA5;
-  --color-geo-accent: #8C7A5B;
-  --color-geo-border: #E0DACE;
-  --color-geo-hover: #F4F1EA;
+  --color-geo-bg: #F8FAFC;
+  --color-geo-text: #1E293B;
+  --color-geo-primary: #4F46E5;
+  --color-geo-accent: #F59E0B;
+  --color-geo-border: #E2E8F0;
+  --color-geo-hover: #EEF2FF;
 }
 
 body {
@@ -26,9 +26,27 @@ body {
 }
 
 .geo-btn-primary {
-  @apply bg-geo-primary text-white rounded-md text-sm font-bold shadow-md px-4 py-3 hover:bg-[#3D5C8A] transition-colors;
+  @apply bg-geo-primary text-white rounded-md text-sm font-bold shadow-md px-4 py-3 hover:bg-indigo-700 transition-colors;
 }
 
 .geo-label {
-  @apply text-[10px] uppercase tracking-widest text-geo-accent font-semibold;
+  @apply text-[10px] uppercase tracking-widest text-slate-500 font-semibold;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.custom-scrollbar::-webkit-scrollbar {
+  width: 4px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: var(--color-geo-border);
+  border-radius: 2px;
 }

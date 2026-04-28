@@ -27,11 +27,14 @@ import {
   Scroll,
   Sun,
   Leaf,
-  Crown
+  Crown,
+  Sparkles,
+  BookMarked
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
 import { auth, signInWithGoogle, db, getLeaderboard, updateUserProfile, recordGameHistory } from './lib/firebase';
+import { getDailyManna, DailyManna } from './lib/gemini';
 import { QUESTIONS } from './data/questions';
 import { ACHIEVEMENTS } from './constants/achievements';
 import { GameState, Testament, Level, Question, UserProfile, GameMode, GameHistoryEntry } from './types';
@@ -67,6 +70,12 @@ export default function App() {
   const [isShowingFeedback, setIsShowingFeedback] = useState(false);
 
   const [isFetchingLeaderboard, setIsFetchingLeaderboard] = useState(false);
+
+  // Daily Manna state
+  const [dailyManna, setDailyManna] = useState<DailyManna | null>(null);
+  const [isFetchingManna, setIsFetchingManna] = useState(false);
+  const [mannaError, setMannaError] = useState<string | null>(null);
+  const [showManna, setShowManna] = useState(false);
 
   // Derived categories from questions
   const categories = Array.from(new Set(QUESTIONS.map(q => q.category).filter(Boolean)));
@@ -142,6 +151,7 @@ export default function App() {
 
   useEffect(() => {
     fetchLeaderboard();
+    fetchDailyManna();
   }, []);
 
   const handleStartGame = () => {
@@ -326,6 +336,20 @@ export default function App() {
       console.error(err);
     } finally {
       setIsFetchingLeaderboard(false);
+    }
+  };
+
+  const fetchDailyManna = async () => {
+    setIsFetchingManna(true);
+    setMannaError(null);
+    try {
+      const manna = await getDailyManna();
+      setDailyManna(manna);
+    } catch (err) {
+      console.error('Failed to fetch Daily Manna:', err);
+      setMannaError('Unable to load today\'s verse. Please try again.');
+    } finally {
+      setIsFetchingManna(false);
     }
   };
 
@@ -624,13 +648,13 @@ export default function App() {
         {/* Main Quiz Area */}
         <section className="flex-1 p-4 sm:p-6 md:p-12 flex flex-col items-center overflow-y-auto bg-geo-bg relative custom-scrollbar">
           <AnimatePresence mode="wait">
-            {!gameState.isPlaying && !gameState.isGameOver && !showLeaderboard && !showHistory && !showProfile && (
+            {!gameState.isPlaying && !gameState.isGameOver && !showLeaderboard && !showHistory && !showProfile && !showManna && (
               <motion.div 
                 key="landing"
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.95 }}
-                className="max-w-2xl w-full flex flex-col items-center text-center space-y-6 md:space-y-12 py-4 md:py-10 h-full justify-center"
+                className="max-w-2xl w-full flex flex-col items-center text-center space-y-6 md:space-y-10 py-4 md:py-10 h-full justify-center"
               >
                 <div className="space-y-4 md:space-y-6">
                   <h2 className="text-3xl sm:text-4xl md:text-5xl font-serif font-black text-geo-text leading-tight uppercase tracking-tight">
@@ -642,28 +666,156 @@ export default function App() {
                   </p>
                 </div>
 
-                <div className="grid grid-cols-2 gap-8 w-full">
-                  <div className="geo-card p-8 flex flex-col items-center justify-center space-y-4">
-                     <div className="w-16 h-16 bg-geo-hover rounded-full flex items-center justify-center text-geo-accent">
-                        <Trophy className="w-8 h-8" />
+                {/* Bento grid layout */}
+                <div className="grid grid-cols-2 gap-4 md:gap-6 w-full">
+                  {/* High Score card */}
+                  <div className="geo-card p-6 md:p-8 flex flex-col items-center justify-center space-y-3 md:space-y-4">
+                     <div className="w-12 h-12 md:w-16 md:h-16 bg-geo-hover rounded-full flex items-center justify-center text-geo-accent">
+                        <Trophy className="w-6 h-6 md:w-8 md:h-8" />
                      </div>
                      <div>
                         <p className="geo-label">Your Best</p>
-                        <p className="text-3xl font-serif font-bold italic">{userProfile?.highScore || 0}</p>
+                        <p className="text-2xl md:text-3xl font-serif font-bold italic">{userProfile?.highScore || 0}</p>
                      </div>
                   </div>
-                  <div className="geo-card p-8 flex flex-col items-center justify-center space-y-4 border-geo-primary/20 bg-geo-primary/5">
-                     <div className="w-16 h-16 bg-geo-primary rounded-full flex items-center justify-center text-white">
-                        <Play className="w-8 h-8 fill-current" />
+                  {/* Begin Quest card */}
+                  <div className="geo-card p-6 md:p-8 flex flex-col items-center justify-center space-y-3 md:space-y-4 border-geo-primary/20 bg-geo-primary/5">
+                     <div className="w-12 h-12 md:w-16 md:h-16 bg-geo-primary rounded-full flex items-center justify-center text-white">
+                        <Play className="w-6 h-6 md:w-8 md:h-8 fill-current" />
                      </div>
                      <button 
                         onClick={handleStartGame}
                         disabled={!user}
-                        className="geo-btn-primary w-full uppercase tracking-widest text-xs py-4"
+                        className="geo-btn-primary w-full uppercase tracking-widest text-xs py-3 md:py-4 disabled:opacity-50 disabled:cursor-not-allowed"
                      >
                         Begin Quest
                      </button>
                   </div>
+                  {/* Daily Manna card - full width */}
+                  <div
+                    className="col-span-2 geo-card p-5 md:p-6 cursor-pointer hover:shadow-md transition-all group"
+                    onClick={() => {
+                      if (!dailyManna && !isFetchingManna) fetchDailyManna();
+                      setShowManna(true);
+                    }}
+                  >
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center gap-2">
+                        <div className="w-8 h-8 bg-amber-100 rounded-lg flex items-center justify-center">
+                          <Sun className="w-4 h-4 text-geo-accent" />
+                        </div>
+                        <div className="text-left">
+                          <p className="geo-label">Daily Manna</p>
+                          <p className="text-[10px] text-slate-400 font-medium">{new Date().toLocaleDateString(undefined, { month: 'long', day: 'numeric' })}</p>
+                        </div>
+                      </div>
+                      <Sparkles className="w-4 h-4 text-geo-accent opacity-60 group-hover:opacity-100 transition-opacity" />
+                    </div>
+                    {isFetchingManna ? (
+                      <div className="flex items-center gap-2 text-slate-400">
+                        <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                        <span className="text-xs italic">Loading today's verse...</span>
+                      </div>
+                    ) : dailyManna ? (
+                      <p className="text-sm font-serif italic text-geo-text text-left leading-relaxed line-clamp-2 md:line-clamp-none">
+                        "{dailyManna.verse}" <span className="not-italic text-xs text-geo-primary font-semibold">— {dailyManna.reference}</span>
+                      </p>
+                    ) : (
+                      <p className="text-xs text-slate-400 italic text-left">Tap to receive today's divine inspiration...</p>
+                    )}
+                  </div>
+                </div>
+              </motion.div>
+            )}
+
+            {/* Daily Manna full view */}
+            {showManna && (
+              <motion.div
+                key="daily-manna"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.95 }}
+                className="w-full max-w-2xl bg-white border border-geo-border shadow-2xl rounded-2xl p-8 md:p-10 mt-4 overflow-y-auto max-h-[85vh]"
+              >
+                <div className="space-y-8">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 bg-amber-100 rounded-xl flex items-center justify-center">
+                        <Sun className="w-5 h-5 text-geo-accent" />
+                      </div>
+                      <div>
+                        <h2 className="text-2xl font-serif font-black uppercase tracking-tight">Daily Manna</h2>
+                        <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">
+                          {new Date().toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}
+                        </p>
+                      </div>
+                    </div>
+                    <button onClick={() => setShowManna(false)} className="w-10 h-10 rounded-full flex items-center justify-center hover:bg-geo-hover transition-colors">
+                      <ChevronRight className="w-6 h-6 text-geo-accent rotate-180" />
+                    </button>
+                  </div>
+
+                  {isFetchingManna ? (
+                    <div className="py-16 flex flex-col items-center gap-4 text-slate-400">
+                      <RefreshCw className="w-8 h-8 animate-spin text-geo-primary" />
+                      <p className="text-sm font-medium italic">Receiving today's divine word...</p>
+                    </div>
+                  ) : mannaError ? (
+                    <div className="py-16 flex flex-col items-center gap-4 text-slate-400">
+                      <BookMarked className="w-12 h-12 text-slate-200" />
+                      <p className="text-sm text-center italic">{mannaError}</p>
+                      <button
+                        onClick={fetchDailyManna}
+                        className="geo-btn-primary flex items-center gap-2 text-xs"
+                      >
+                        <RefreshCw className="w-3.5 h-3.5" />
+                        Try Again
+                      </button>
+                    </div>
+                  ) : dailyManna ? (
+                    <>
+                      <div className="bg-gradient-to-br from-indigo-50 to-amber-50 border border-geo-primary/10 rounded-2xl p-6 md:p-8 space-y-4">
+                        <div className="flex items-start gap-3">
+                          <BookOpen className="w-5 h-5 text-geo-primary shrink-0 mt-1" />
+                          <blockquote className="font-serif text-lg md:text-xl italic text-geo-text leading-relaxed">
+                            "{dailyManna.verse}"
+                          </blockquote>
+                        </div>
+                        <div className="flex justify-end">
+                          <span className="bg-geo-primary text-white text-xs font-bold px-3 py-1.5 rounded-full">
+                            {dailyManna.reference}
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="space-y-3">
+                        <div className="flex items-center gap-2">
+                          <Leaf className="w-4 h-4 text-geo-accent" />
+                          <h3 className="geo-label">Devotional Reflection</h3>
+                        </div>
+                        <p className="text-slate-600 leading-relaxed text-sm md:text-base">
+                          {dailyManna.devotional}
+                        </p>
+                      </div>
+
+                      <div className="flex items-center justify-between pt-4 border-t border-geo-border">
+                        <div className="flex items-center gap-2 text-slate-400">
+                          <Sparkles className="w-3.5 h-3.5 text-geo-accent" />
+                          <span className="text-[10px] uppercase tracking-widest font-semibold">Powered by Gemini AI</span>
+                        </div>
+                        <button
+                          onClick={() => {
+                            setShowManna(false);
+                            setGameState(prev => ({ ...prev, gameMode: 'Daily' }));
+                          }}
+                          className="geo-btn-primary flex items-center gap-2 text-xs py-2"
+                        >
+                          <Calendar className="w-3.5 h-3.5" />
+                          Daily Quest
+                        </button>
+                      </div>
+                    </>
+                  ) : null}
                 </div>
               </motion.div>
             )}
